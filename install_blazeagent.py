@@ -31,9 +31,8 @@ ZIP_NAME    = "Blaze-Agent.zip"
 MIN_PYTHON  = (3, 10)
 
 RELEASE_URL = (
-    "https://github.com/"
-    f"{REPO_OWNER}/{REPO_NAME}"
-    f"/releases/download/{RELEASE_TAG}/{ZIP_NAME}"
+    f"https://github.com/{REPO_OWNER}/{REPO_NAME}"
+    f"/releases/latest/download/{ZIP_NAME}"
 )
 
 CORE_PACKAGES = [
