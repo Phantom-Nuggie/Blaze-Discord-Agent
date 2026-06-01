@@ -1,10 +1,10 @@
-# Blaze-Agent
+# Blaze-Discord-Agent
 
 Self-service AI Discord agent. Your bot, your server, your API keys.
 
 ## What It Is
 
-Blaze-Agent gives you an AI-powered Discord bot for your business. The bot answers FAQs, takes orders, books appointments, remembers customer preferences, generates files, and more.
+Blaze-Discord-Agent gives you an AI-powered Discord bot for your business. The bot answers FAQs, takes orders, books appointments, remembers customer preferences, generates files, and more.
 
 **You bring:** A Discord bot token + an AI API key (OpenRouter, OpenAI, Anthropic, Google, or Ollama for local)
 
@@ -29,8 +29,8 @@ python3 install_blazeagent.py
 ### Option 2: Manual install
 
 ```bash
-git clone https://github.com/zerochunks/Blaze-Agent.git
-cd Blaze-Agent
+git clone https://github.com/Phantom-Nuggie/Blaze-Discord-Agent.git
+cd Blaze-Discord-Agent
 python3 -m venv .venv
 source .venv/bin/activate   # Linux/Mac
 # OR: .venv\Scripts\activate   # Windows
@@ -74,7 +74,7 @@ Open the dashboard at `http://localhost:8080` to edit your bot's Soul.md -- its 
   - Google Gemini: https://aistudio.google.com/app/apikey
   - Ollama (local, no key needed): https://ollama.com
 
-## Creating a Discord Bot
+##Creating a Discord Bot
 
 1. Go to https://discord.com/developers/applications
 2. Click "New Application" -- give it a name
