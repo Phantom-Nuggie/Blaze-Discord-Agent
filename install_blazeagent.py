@@ -1,303 +1,605 @@
 #!/usr/bin/env python3
 """
-Blaze-Agent Installer
-=====================
+Blaze-Agent Installer v2.0
+==========================
 Downloads and sets up Blaze-Agent on any machine.
 
 Usage:
-    python install_blazeagent.py
-
-    OR download and run:
-    curl -fsSL https://blze.ai/install.py | python3
-
-What this does:
-    1. Checks Python version
-    2. Downloads Blaze-Agent source
-    3. Creates a virtual environment
-    4. Installs dependencies
-    5. Provides next steps
+    python install_blazeagent.py              interactive install
+    python install_blazeagent.py --yes        non-interactive
+    python install_blazeagent.py --uninstall  remove Blaze-Agent
+    python install_blazeagent.py --status     check if installed
 """
 
 import sys
 import os
 import subprocess
 import platform
+import shutil
+import threading
+import time
+import zipfile
 
-# --- Configuration ---
-REPO_URL = "https://github.com/zerochunks/Blaze-Agent/archive/refs/heads/main.zip"
-PROJECT_NAME = "Blaze-Agent"
-MIN_PYTHON = (3, 10)
+# ═══════════════════════════════════════════════════
+#  CONFIG
+# ═══════════════════════════════════════════════════
 
-# --- ANSI colors ---
-GREEN = "\033[92m"
-CYAN = "\033[96m"
-YELLOW = "\033[93m"
-RED = "\033[91m"
-BOLD = "\033[1m"
-RESET = "\033[0m"
+REPO_OWNER  = "Phantom-Nuggie"
+REPO_NAME   = "Blaze-Discord-Agent"
+RELEASE_TAG = "v1.0"
+ZIP_NAME    = "Blaze-Agent.zip"
+MIN_PYTHON  = (3, 10)
 
-def ok(msg):      print(f"  {GREEN}✓ {msg}{RESET}")
-def info(msg):    print(f"  {CYAN}  {msg}{RESET}")
-def warn(msg):    print(f"  {YELLOW}⚠ {msg}{RESET}")
-def fail(msg):    print(f"  {RED}✗ {msg}{RESET}")
+RELEASE_URL = (
+    "https://github.com/"
+    f"{REPO_OWNER}/{REPO_NAME}"
+    f"/releases/download/{RELEASE_TAG}/{ZIP_NAME}"
+)
+
+CORE_PACKAGES = [
+    "discord.py>=2.3.0",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+    "pyyaml>=6.0",
+    "aiohttp>=3.8.0",
+    "python-dotenv>=1.0.0",
+    "jinja2>=3.1.0",
+    "reportlab>=4.0.0",
+    "python-docx>=0.8.11",
+    "openpyxl>=3.1.0",
+    "aiosqlite>=0.19.0",
+]
+
+# ═══════════════════════════════════════════════════
+#  COLORS
+# ═══════════════════════════════════════════════════
+
+_use_color = True
+
+def _check_color():
+    global _use_color
+    if os.getenv("NO_COLOR"):
+        _use_color = False
+        return
+    if platform.system() == "Windows":
+        _use_color = bool(os.getenv("ANSICON") or os.getenv("WT_SESSION"))
+    else:
+        _use_color = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
+
+_check_color()
+
+class _C:
+    R0   = "\033[38;2;255;0;60m"
+    G0   = "\033[38;2;0;255;136m"
+    Y0   = "\033[38;2;255;204;0m"
+    B0   = "\033[38;2;64;156;255m"
+    M0   = "\033[38;2;170;68;255m"
+    C0   = "\033[38;2;0;204;204m"
+    D0   = "\033[38;2;90;90;90m"
+    D1   = "\033[38;2;60;60;60m"
+    L0   = "\033[38;2;170;170;170m"
+    W0   = "\033[38;2;255;255;255m"
+    BLD  = "\033[1m"
+    DIM  = "\033[2m"
+    RST  = "\033[0m"
+
+def clr(code):
+    return code if _use_color else ""
+
+# shortcuts
+R0  = lambda: clr(_C.R0)
+G0  = lambda: clr(_C.G0)
+Y0  = lambda: clr(_C.Y0)
+D0  = lambda: clr(_C.D0)
+D1  = lambda: clr(_C.D1)
+L0  = lambda: clr(_C.L0)
+W0  = lambda: clr(_C.W0)
+BLD = lambda: clr(_C.BLD)
+DIM = lambda: clr(_C.DIM)
+RST = lambda: clr(_C.RST)
+C0  = lambda: clr(_C.C0)
+M0  = lambda: clr(_C.M0)
+B0  = lambda: clr(_C.B0)
+
+# ═══════════════════════════════════════════════════
+#  UI HELPERS
+# ═══════════════════════════════════════════════════
+
+def twidth():
+    try:
+        return max(40, min(80, os.get_terminal_size().columns - 2))
+    except OSError:
+        return 56
+
+def clear():
+    sys.stdout.write("\033[2J\033[H" if _use_color else "\n")
+    sys.stdout.flush()
+
+def rule(char="═", color=None):
+    w = twidth()
+    c = color or D0
+    print(f"  {c()}{char * (w - 4)}{RST()}")
+
+# ═══════════════════════════════════════════════════
+#  BANNER
+# ═══════════════════════════════════════════════════
 
 def banner():
+    r = R0(); b = BLD(); d = D0(); rst = RST()
     print(f"""
-{CYAN}{BOLD}
-  ____  _            _       _____ _
- |  _ \| |          | |     / ____| |
- | |_) | | __ _  __| | __ _| |    | |_
- |  _ <| |/ _' |/ _' |/ _' | |    | __|
- | |_) | | (_| | (_| | (_| | |____| |_
- |____/|_|\__,_|\__,_|\__,_|\______|
-{RESET}
-{BOLD}  Installer v1.0{RESET}
-""")
+  {r}{b}  ██████╗ ██╗      █████╗ ███████╗███████╗{rst}
+  {r}{b}  ██╔══██╗██║     ██╔══██╗╚══███╔╝██╔════╝{rst}
+  {r}{b}  ██████╔╝██║     ███████║  ███╔╝ █████╗  {rst}
+  {r}{b}  ██╔══██╗██║     ██╔══██║ ███╔╝  ██╔══╝  {rst}
+  {r}{b}  ██████╔╝███████╗██║  ██║███████╗███████╗{rst}
+  {r}{b}  ╚═════╝ ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝{rst}
+  {d}{'─' * 44}{rst}
+  {W0()}{b}  Self-Service AI Discord Agent{rst}
+  {d}  Installer v2.0{rst}
+  {d}{'─' * 44}{rst}""")
+
+# ═══════════════════════════════════════════════════
+#  STATUS LABELS
+# ═══════════════════════════════════════════════════
+
+def step(num, total, text):
+    print(f"\n  {R0()}{BLD()}[{num}/{total}]{RST()}  {W0()}{text}{RST()}")
+    rule("─", D1)
+
+def ok(msg, indent=4):
+    print(f"{' '*indent}{G0()}✔{RST()}  {msg}")
+
+def info(msg, indent=4):
+    print(f"{' '*indent}{L0()}{msg}{RST()}")
+
+def warn(msg, indent=4):
+    print(f"{' '*indent}{Y0()}▸  {msg}{RST()}")
+
+def fail(msg, indent=4):
+    print(f"{' '*indent}{R0()}✘{RST()}  {R0()}{msg}{RST()}")
+
+def bullet(num, text, indent=6):
+    print(f"{' '*indent}{R0()}{BLD()}⦿ {num}{RST()}  {text}")
+
+# ═══════════════════════════════════════════════════
+#  SPINNER
+# ═══════════════════════════════════════════════════
+
+class Spinner:
+    FRAMES = ["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"]
+
+    def __init__(self, msg=""):
+        self.msg = msg
+        self._stop = threading.Event()
+        self._thread = None
+        self._ok = False
+        self._err = None
+
+    def _run(self):
+        i = 0
+        while not self._stop.is_set():
+            f = self.FRAMES[i % len(self.FRAMES)]
+            line = f"    {R0()}{f}{RST()} {self.msg}  "
+            sys.stdout.write("\r" + line)
+            sys.stdout.flush()
+            i += 1
+            time.sleep(0.08)
+        # clear
+        sys.stdout.write("\r" + " " * (len(self.msg) + 12) + "\r")
+        sys.stdout.flush()
+
+    def __enter__(self):
+        self._thread = threading.Thread(target=self._run, daemon=True)
+        self._thread.start()
+        return self
+
+    def __exit__(self, *exc):
+        self._stop.set()
+        if self._thread:
+            self._thread.join(1)
+        if self._err:
+            fail(str(self._err))
+        elif self._ok:
+            ok(self.msg)
+
+    def finish(self, ok=True, msg=None, err=None):
+        self._ok = ok
+        self._err = err
+        if msg:
+            self.msg = msg
+
+# ═══════════════════════════════════════════════════
+#  PROGRESS BAR
+# ═══════════════════════════════════════════════════
+
+def download_progress(current, total, label="Downloading"):
+    if total <= 0:
+        return
+    pct = current / total
+    filled = int(30 * pct)
+    bar = (f"{R0()}{'█' * filled}{RST()}"
+           f"{D0()}{'░' * (30 - filled)}{RST()}")
+    s = _human(current)
+    t = _human(total)
+    line = (f"\r    {label}: {bar} "
+            f"{L0()}{pct*100:5.1f}%{RST()} "
+            f"{D0()}({s}/{t}){RST()}  ")
+    sys.stdout.write(line)
+    sys.stdout.flush()
+    if current >= total:
+        print()
+
+def _human(n):
+    for u in ("B", "KB", "MB", "GB"):
+        if n < 1024:
+            return f"{n:.1f}{u}"
+        n /= 1024
+    return f"{n:.1f}TB"
+
+# ═══════════════════════════════════════════════════
+#  SYSTEM CHECKS
+# ═══════════════════════════════════════════════════
 
 def check_python():
-    """Verify Python version."""
-    version = sys.version_info[:2]
-    if version < MIN_PYTHON:
-        fail(f"Python {MIN_PYTHON[0]}.{MIN_PYTHON[1]}+ required. You have {version[0]}.{version[1]}")
-        sys.exit(1)
-    ok(f"Python {version[0]}.{version[1]} detected")
-
-def check_git():
-    """Check if git is available."""
-    try:
-        subprocess.run(["git", "--version"], capture_output=True, check=True)
-        return True
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    v = sys.version_info[:2]
+    if v < MIN_PYTHON:
+        fail(f"Python {MIN_PYTHON[0]}.{MIN_PYTHON[1]}+ required. Found {v[0]}.{v[1]}")
         return False
+    ok(f"Python {v[0]}.{v[1]}")
+    return True
 
 def check_pip():
-    """Check if pip is available."""
     try:
-        subprocess.run([sys.executable, "-m", "pip", "--version"], capture_output=True, check=True)
+        subprocess.run(
+            [sys.executable, "-m", "pip", "--version"],
+            capture_output=True, check=True
+        )
+        ok("pip available")
         return True
     except subprocess.CalledProcessError:
+        fail("pip not found")
+        info("Fix: sudo apt install python3-pip")
         return False
 
-def install_dependencies(project_dir):
-    """Create venv and install requirements."""
-    venv_dir = os.path.join(project_dir, ".venv")
+def check_git():
+    try:
+        subprocess.run(
+            ["git", "--version"], capture_output=True, check=True
+        )
+        ok("git available")
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        warn("git not found — will use zip download")
+        return False
 
-    # Create virtual environment
+def check_internet():
+    import urllib.request
+    try:
+        urllib.request.urlopen("https://github.com", timeout=5)
+        ok("Internet connection")
+        return True
+    except Exception:
+        fail("No internet connection")
+        return False
+
+# ═══════════════════════════════════════════════════
+#  DOWNLOAD + EXTRACT
+# ═══════════════════════════════════════════════════
+
+def download_source(target_dir):
+    """Download Blaze-Agent from GitHub release, verify, extract."""
+    import urllib.request
+
+    if os.path.exists(target_dir):
+        warn(f"Directory exists: {target_dir}")
+        try:
+            resp = input(f"    Replace? [{G0()}Y{RST()}/{D0()}n{RST()}]: ").strip().lower()
+        except EOFError:
+            print()
+            resp = "y"
+        if resp == "n":
+            info("Using existing installation.")
+            return target_dir
+        info("Removing old files...")
+        shutil.rmtree(target_dir)
+
+    info(f"Source: github.com/{REPO_OWNER}/{REPO_NAME}/releases")
+
+    tmp_zip = os.path.join("/tmp", "blaze_download.zip")
+
+    try:
+        _dl(RELEASE_URL, tmp_zip)
+    except Exception as e:
+        try:
+            urllib.request.urlretrieve(RELEASE_URL, tmp_zip)
+        except Exception as e2:
+            fail(f"Download failed: {e2}")
+            info(f"Manual: {RELEASE_URL}")
+            sys.exit(1)
+
+    # Verify
+    try:
+        with zipfile.ZipFile(tmp_zip, "r") as zf:
+            bad = zf.testzip()
+            if bad:
+                fail(f"Corrupt zip (bad: {bad})")
+                sys.exit(1)
+        ok(f"Download verified ({_human(os.path.getsize(tmp_zip))})")
+    except zipfile.BadZipFile:
+        fail("Not a valid zip archive")
+        sys.exit(1)
+
+    # Extract
+    info("Extracting...")
+    try:
+        with zipfile.ZipFile(tmp_zip, "r") as zf:
+            # GitHub wraps in a top-level dir; extract to parent
+            names = zf.namelist()
+            top = names[0].split("/")[0] if names else ""
+            zf.extractall(os.path.dirname(target_dir))
+            extracted = os.path.join(os.path.dirname(target_dir), top)
+            if os.path.exists(extracted) and extracted != target_dir:
+                if os.path.exists(target_dir):
+                    shutil.rmtree(target_dir)
+                shutil.move(extracted, target_dir)
+        ok(f"Extracted to: {target_dir}")
+    except Exception as e:
+        fail(f"Extraction failed: {e}")
+        sys.exit(1)
+    finally:
+        if os.path.exists(tmp_zip):
+            os.unlink(tmp_zip)
+
+    return target_dir
+
+
+def _dl(url, dest):
+    import urllib.request
+    req = urllib.request.Request(url, headers={"User-Agent": "Blaze-Installer/2.0"})
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        total = int(resp.headers.get("Content-Length", 0))
+        got = 0
+        with open(dest, "wb") as f:
+            while True:
+                chunk = resp.read(8192)
+                if not chunk:
+                    break
+                f.write(chunk)
+                got += len(chunk)
+                if total > 0:
+                    download_progress(got, total)
+    if total <= 0:
+        ok(f"Downloaded {ZIP_NAME}")
+
+# ═══════════════════════════════════════════════════
+#  DEPENDENCIES
+# ═══════════════════════════════════════════════════
+
+def install_deps(project_dir):
+    venv = os.path.join(project_dir, ".venv")
+    is_win = platform.system() == "Windows"
+    pip  = os.path.join(venv, "Scripts" if is_win else "bin", "pip")
+    pyp  = os.path.join(venv, "Scripts" if is_win else "bin", "python")
+
     info("Creating virtual environment...")
     try:
         subprocess.run(
-            [sys.executable, "-m", "venv", venv_dir],
+            [sys.executable, "-m", "venv", venv],
             check=True, capture_output=True
         )
-        ok("Virtual environment created")
+        ok("Virtual environment ready")
     except subprocess.CalledProcessError:
-        fail("Failed to create virtual environment.")
-        info("Try: sudo apt install python3-venv")
+        fail("Failed to create .venv")
+        info("Fix: sudo apt install python3-venv")
         sys.exit(1)
-
-    # Determine pip path
-    if platform.system() == "Windows":
-        pip_path = os.path.join(venv_dir, "Scripts", "pip")
-        python_path = os.path.join(venv_dir, "Scripts", "python")
-    else:
-        pip_path = os.path.join(venv_dir, "bin", "pip")
-        python_path = os.path.join(venv_dir, "bin", "python")
 
     # Upgrade pip
-    info("Upgrading pip...")
-    subprocess.run(
-        [python_path, "-m", "pip", "install", "--upgrade", "pip"],
-        capture_output=True
-    )
+    subprocess.run([pyp, "-m", "pip", "install", "--upgrade", "pip"],
+                   capture_output=True)
 
-    # Install requirements
-    req_file = os.path.join(project_dir, "requirements.txt")
-    if os.path.exists(req_file):
-        info("Installing dependencies (this may take a minute)...")
+    req = os.path.join(project_dir, "requirements.txt")
+    if os.path.exists(req):
+        info("Installing dependencies...")
         try:
-            subprocess.run(
-                [pip_path, "install", "-r", req_file],
-                check=True, capture_output=True
-            )
-            ok("All dependencies installed")
-        except subprocess.CalledProcessError:
-            fail("Failed to install dependencies.")
-            info(f"Try manually: {pip_path} install -r requirements.txt")
+            r = subprocess.run([pip, "install", "-r", req],
+                               capture_output=True, text=True, timeout=300)
+            if r.returncode != 0:
+                warn("Some requirements failed, falling back to core...")
+                _inst_core(pip)
+            else:
+                ok("Dependencies installed")
+        except subprocess.TimeoutExpired:
+            fail("Dependency install timed out")
             sys.exit(1)
     else:
-        warn("requirements.txt not found. Installing core packages...")
-        subprocess.run(
-            [pip_path, "install", "discord.py", "fastapi", "uvicorn", "pyyaml",
-             "aiohttp", "jinja2", "python-dotenv", "reportlab", "python-docx",
-             "openpyxl", "aiosqlite"],
-            check_output=True
-        )
+        warn("requirements.txt missing — installing core...")
+        _inst_core(pip)
 
-    return python_path
+    return pyp
 
-def download_source(target_dir):
-    """Download Blaze-Agent source code."""
-    if os.path.exists(target_dir):
-        warn(f"Directory '{target_dir}' already exists.")
-        choice = input("  Overwrite? [y/N]: ").strip().lower()
-        if choice != "y":
-            info("Using existing directory.")
-            return target_dir
 
-    # Try git clone first
-    if check_git():
-        info("Downloading via git...")
-        try:
-            if os.path.exists(target_dir):
-                import shutil
-                shutil.rmtree(target_dir)
-            subprocess.run(
-                ["git", "clone", "--depth=1",
-                 "https://github.com/zerochunks/Blaze-Agent.git",
-                 target_dir],
-                check=True
-            )
-            ok(f"Downloaded to: {target_dir}")
-            return target_dir
-        except subprocess.CalledProcessError:
-            warn("Git download failed. Trying alternative method...")
+def _inst_core(pip):
+    r = subprocess.run([pip, "install"] + CORE_PACKAGES,
+                       capture_output=True, text=True, timeout=300)
+    if r.returncode == 0:
+        ok("Core packages installed")
+    else:
+        fail("Some packages failed")
+        info(f"Manual: {pip} install <packages>")
 
-    # Alternative: download zip
-    info("Downloading source archive...")
-    try:
-        import urllib.request
-        import zipfile
-        import shutil
-        import tempfile
+# ═══════════════════════════════════════════════════
+#  LAUNCHERS
+# ═══════════════════════════════════════════════════
 
-        if os.path.exists(target_dir):
-            shutil.rmtree(target_dir)
+def make_launchers(project_dir, python_path):
+    bash = "#!/usr/bin/env bash\n# Blaze-Agent Launcher\ncd \"$(dirname \"$0\")\"\nsource .venv/bin/activate 2>/dev/null || true\npython run.py \"$@\"\n"
+    sh = os.path.join(project_dir, "start.sh")
+    with open(sh, "w") as f:
+        f.write(bash)
+    os.chmod(sh, 0o755)
 
-        with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp:
-            urllib.request.urlretrieve(REPO_URL, tmp.name)
-            with zipfile.ZipFile(tmp.name, "r") as z:
-                z.extractall(tempfile.gettempdir())
-
-            # Rename extracted folder
-            extracted = os.path.join(tempfile.gettempdir(), f"{PROJECT_NAME}-main")
-            if os.path.exists(extracted):
-                shutil.move(extracted, target_dir)
-
-        ok(f"Downloaded to: {target_dir}")
-        return target_dir
-    except Exception as e:
-        fail(f"Download failed: {e}")
-        info("Download manually from: https://github.com/zerochunks/Blaze-Agent")
-        sys.exit(1)
-
-def create_launcher_scripts(project_dir, python_path):
-    """Create easy launcher scripts."""
-    # Bash launcher
-    bash_content = f"""#!/bin/bash
-# Blaze-Agent Launcher
-cd "$(dirname "$0")"
-source .venv/bin/activate 2>/dev/null || true
-python run.py "$@"
-"""
-    bash_path = os.path.join(project_dir, "start.sh")
-    with open(bash_path, "w") as f:
-        f.write(bash_content)
-    os.chmod(bash_path, 0o755)
-
-    # Batch launcher (Windows)
-    bat_content = f"""@echo off
-cd /d "%~dp0"
-call .venv\\Scripts\\activate.bat 2>nul
-python run.py %*
-"""
-    bat_path = os.path.join(project_dir, "start.bat")
-    with open(bat_path, "w") as f:
-        f.write(bat_content)
+    bat = "@echo off\r\nREM Blaze-Agent Launcher\r\ncd /d \"%~dp0\"\r\ncall .venv\\Scripts\\activate.bat 2>nul\r\npython run.py %*\r\n"
+    with open(os.path.join(project_dir, "start.bat"), "w") as f:
+        f.write(bat)
 
     ok("Launcher scripts created (start.sh / start.bat)")
 
-def main():
-    banner()
+# ═══════════════════════════════════════════════════
+#  STATUS / UNINSTALL
+# ═══════════════════════════════════════════════════
 
-    print(f"\n{BOLD}Checking system...{RESET}\n")
+def show_status(install_dir):
+    if not os.path.isdir(install_dir):
+        warn("Not installed.")
+        return
+    ok(f"Install dir:  {install_dir}")
+    ok(f"Source code:  {'yes' if os.path.isfile(os.path.join(install_dir,'setup.py')) else 'no'}")
+    ok(f"Virtual env:  {'yes' if os.path.isdir(os.path.join(install_dir,'.venv')) else 'no'}")
+    ok(f"Configured:  {'yes' if os.path.isfile(os.path.join(install_dir,'config','config.yaml')) else 'no'}")
 
-    # Step 1: Check Python
-    check_python()
+def do_uninstall(install_dir):
+    if not os.path.isdir(install_dir):
+        warn(f"Not found: {install_dir}")
+        return
+    warn(f"This will delete: {install_dir}")
+    resp = input(f"    Confirm? [{R0()}y{RST()}/{D0()}N{RST()}]: ").strip().lower()
+    if resp != "y":
+        info("Cancelled.")
+        return
+    try:
+        shutil.rmtree(install_dir)
+        ok(f"Removed: {install_dir}")
+    except Exception as e:
+        fail(f"Could not remove: {e}")
 
-    # Step 2: Check pip
-    if check_pip():
-        ok("pip available")
+# ═══════════════════════════════════════════════════
+#  SUMMARY BOX
+# ═══════════════════════════════════════════════════
+
+def summary(project_dir, python_path):
+    bw = 50
+    r = R0(); b = BLD(); d = D0(); rst = RST()
+    w = W0(); g = G0()
+
+    print()
+    print(f"  {r}{b}╔{'═' * bw}╗{rst}")
+    print(f"  {r}{b}║{'  INSTALLATION COMPLETE':^{bw}}║{rst}")
+    print(f"  {r}{b}╠{'═' * bw}╣{rst}")
+
+    loc = project_dir if len(project_dir) <= bw-13 else "..." + project_dir[-(bw-16):]
+    print(f"  {r}{b}║{rst}  Location:  {w}{loc:<{bw-13}}{r}{b}║{rst}")
+
+    pyp_short = python_path if len(python_path) <= bw-13 else "..." + python_path[-(bw-16):]
+    print(f"  {r}{b}║{rst}  Python:    {w}{pyp_short:<{bw-13}}{r}{b}║{rst}")
+
+    print(f"  {r}{b}╠{'═' * bw}╣{rst}")
+    print(f"  {r}{b}║{rst}  {b}Next steps:{' ' * (bw-13)}{r}{b}║{rst}")
+
+    cmds = [
+        (f"cd {project_dir}", ""),
+        (f"{python_path} setup.py", ""),
+        (f"{python_path} run.py", ""),
+    ]
+    for cmd, _ in cmds:
+        trunc = cmd[:bw-9]
+        pad = bw - 9 - len(trunc)
+        print(f"  {r}{b}║{rst}    {g}→{rst} {trunc}{' '*pad}{r}{b}║{rst}")
+
+    docs = "Docs: github.com/Phantom-Nuggie/Blaze-Discord-Agent"
+    if len(docs) > bw - 4:
+        docs = docs[:bw-7] + "..."
+    print(f"  {r}{b}║{rst}  {d}{docs}{rst}{' '*max(0,bw-4-len(docs))}{r}{b}║{rst}")
+    print(f"  {r}{b}╚{'═' * bw}╝{rst}")
+    print()
+
+# ═══════════════════════════════════════════════════
+#  INPUT
+# ═══════════════════════════════════════════════════
+
+def ask(prompt, default=""):
+    if default:
+        full = f"    {prompt} [{G0()}{default}{RST()}]: "
     else:
-        fail("pip not found. Install it first.")
+        full = f"    {prompt}: "
+    try:
+        resp = input(full).strip()
+    except EOFError:
+        print()
+        resp = ""
+    return resp if resp else default
+
+# ═══════════════════════════════════════════════════
+#  MAIN
+# ═══════════════════════════════════════════════════
+
+def main():
+    auto    = "--yes" in sys.argv or "-y" in sys.argv
+    if not auto and not (hasattr(sys.stdin, "isatty") and sys.stdin.isatty()):
+        auto = True 
+    uninst  = "--uninstall" in sys.argv
+    status  = "--status" in sys.argv
+    default_dir = os.path.join(os.path.expanduser("~"), "Blaze-Agent")
+
+    if status:
+        banner()
+        step(1, 1, "Status")
+        show_status(default_dir)
+        return
+
+    if uninst:
+        banner()
+        step(1, 1, "Uninstall")
+        do_uninstall(default_dir)
+        return
+
+    clear()
+    banner()
+    TOTAL = 5
+
+    # ── Step 1 ──
+    step(1, TOTAL, "System checks")
+    if not check_python():
+        sys.exit(1)
+    if not check_pip():
+        sys.exit(1)
+    check_git()
+    if not check_internet():
         sys.exit(1)
 
-    # Step 3: Check git (optional)
-    if check_git():
-        ok("git available")
+    # ── Step 2 ──
+    step(2, TOTAL, "Install location")
+    if auto:
+        target = default_dir
+        info(f"Installing to: {target}")
     else:
-        warn("git not found. Will use zip download.")
-
-    # Step 4: Determine install location
-    print(f"\n{BOLD}Installation{RESET}\n")
-    default_dir = os.path.join(os.path.expanduser("~"), "Blaze-Agent")
-    info(f"Default install location: {default_dir}")
-    custom_dir = input("  Install here? [Y/n]: ").strip().lower()
-
-    if custom_dir == "n":
-        custom_path = input("  Enter full path: ").strip()
-        if custom_path:
-            target_dir = os.path.abspath(custom_path)
+        info(f"Default: {default_dir}")
+        resp = ask("Install here", "Y").lower()
+        if resp in ("n", "no"):
+            p = ask("Enter path").strip()
+            target = os.path.abspath(p) if p else default_dir
         else:
-            target_dir = default_dir
-    else:
-        target_dir = default_dir
+            target = default_dir
+    info(f"Target: {target}")
 
-    # Step 5: Download source
-    project_dir = download_source(target_dir)
+    # ── Step 3 ──
+    step(3, TOTAL, "Download")
+    project_dir = download_source(target)
 
-    # Step 6: Install dependencies
-    print(f"\n{BOLD}Dependencies{RESET}\n")
-    python_path = install_dependencies(project_dir)
+    # ── Step 4 ──
+    step(4, TOTAL, "Dependencies")
+    python_path = install_deps(project_dir)
 
-    # Step 7: Create launcher scripts
-    print(f"\n{BOLD}Finalizing{RESET}\n")
-    create_launcher_scripts(project_dir, python_path)
+    # ── Step 5 ──
+    step(5, TOTAL, "Finalizing")
+    make_launchers(project_dir, python_path)
 
-    # Done
-    print(f"""
-{BOLD}{GREEN}{'='*50}{RESET}
-{BOLD}{GREEN}  INSTALLATION COMPLETE!{RESET}
-{BOLD}{GREEN}{'='*50}{RESET}
+    # ── Done ──
+    summary(project_dir, python_path)
 
-  Location:     {project_dir}
-  Python:       {python_path}
-
-{BOLD}Next steps:{RESET}
-
-  1. Go to the project:
-     cd {project_dir}
-
-  2. Run the setup wizard:
-     {python_path} setup.py
-
-  3. Follow the prompts to configure your bot
-
-  4. Start the bot:
-     {python_path} run.py
-
-     Or use the launcher:
-     ./start.sh          (Linux/Mac)
-     start.bat           (Windows)
-
-{BOLD}Need help?{RESET}
-  Run: {python_path} setup.py --help
-  Docs: https://github.com/zerochunks/Blaze-Agent/wiki
-
-""")
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print(f"\n\n  {YELLOW}Installation cancelled.{RESET}")
+        print(f"\n\n  {Y0()}Installation cancelled.{RST()}")
         sys.exit(0)
