@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BlazeAgent - Soul Editor</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a1a; color: #e0e0e0; font-family: 'Space Grotesk', 'Segoe UI', sans-serif; }
+        .sidebar { position: fixed; left: 0; top: 0; width: 220px; height: 100vh; background: #111127; padding: 20px 0; border-right: 1px solid #1a1a3e; }
+        .sidebar h2 { color: #e94560; padding: 0 20px 20px; font-size: 18px; border-bottom: 1px solid #1a1a3e; }
+        .sidebar a { display: block; padding: 12px 20px; color: #aaa; text-decoration: none; font-size: 14px; }
+        .sidebar a:hover, .sidebar a.active { background: #1a1a3e; color: #e94560; }
+        .main { margin-left: 220px; padding: 30px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header h1 { color: #fff; }
+        textarea { width: 100%; height: calc(100vh - 160px); background: #111127; border: 1px solid #1a1a3e; border-radius: 8px; color: #e0e0e0; font-family: 'Courier New', monospace; font-size: 14px; padding: 20px; resize: vertical; line-height: 1.6; }
+        textarea:focus { outline: none; border-color: #e94560; }
+        .btn { background: #e94560; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        .btn:hover { background: #c81e45; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>BlazeAgent</h2>
+        <a href="/"><span class="nav-icon">🏠</span>Dashboard</a>
+        <a href="/soul" class="active"><span class="nav-icon">📝</span>Soul Editor</a>
+        <a href="/memory"><span class="nav-icon">🧠</span>Memory</a>
+        <a href="/skills"><span class="nav-icon">🔧</span>Skills</a>
+        <a href="/files"><span class="nav-icon">📁</span>Files</a>
+        <a href="/settings"><span class="nav-icon">⚙️</span>Settings</a>
+    </div>
+    <div class="main">
+        <div class="header">
+            <h1>📝 Soul Editor</h1>
+            <form method="post" action="/soul/save" style="display:inline;">
+                <input type="hidden" name="content" id="content_field">
+                <button type="submit" class="btn" onclick="document.getElementById('content_field').value=document.getElementById('soul_editor').value">Save Changes</button>
+            </form>
+        </div>
+        <p style="color: #666; margin-bottom: 15px; font-size: 13px;">Edit your bot's personality, business info, knowledge, and rules. Changes apply immediately -- no restart needed.</p>
+        <textarea id="soul_editor" spellcheck="false">{{ soul_content }}</textarea>
+    </div>
+</body>
+</html>

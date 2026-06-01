@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BlazeAgent - Settings</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a1a; color: #e0e0e0; font-family: 'Space Grotesk', 'Segoe UI', sans-serif; }
+        .sidebar { position: fixed; left: 0; top: 0; width: 220px; height: 100vh; background: #111127; padding: 20px 0; border-right: 1px solid #1a1a3e; }
+        .sidebar h2 { color: #e94560; padding: 0 20px 20px; font-size: 18px; border-bottom: 1px solid #1a1a3e; }
+        .sidebar a { display: block; padding: 12px 20px; color: #aaa; text-decoration: none; font-size: 14px; }
+        .sidebar a:hover, .sidebar a.active { background: #1a1a3e; color: #e94560; }
+        .main { margin-left: 220px; padding: 30px; max-width: 600px; }
+        .header { margin-bottom: 20px; }
+        .header h1 { color: #fff; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; color: #e94560; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        input, select { width: 100%; padding: 10px; background: #111127; border: 1px solid #1a1a3e; border-radius: 6px; color: #e0e0e0; font-size: 14px; box-sizing: border-box; }
+        input:focus, select:focus { outline: none; border-color: #e94560; }
+        .btn { background: #e94560; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        .btn:hover { background: #c81e45; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>BlazeAgent</h2>
+        <a href="/"><span class="nav-icon">🏠</span>Dashboard</a>
+        <a href="/soul"><span class="nav-icon">📝</span>Soul Editor</a>
+        <a href="/memory"><span class="nav-icon">🧠</span>Memory</a>
+        <a href="/skills"><span class="nav-icon">🔧</span>Skills</a>
+        <a href="/files"><span class="nav-icon">📁</span>Files</a>
+        <a href="/settings" class="active"><span class="nav-icon">⚙️</span>Settings</a>
+    </div>
+    <div class="main">
+        <div class="header">
+            <h1>⚙️ Settings</h1>
+            <p style="color:#666; margin-top:5px; font-size:13px;">Configure AI model, spend limits, and bot identity.</p>
+        </div>
+        <form method="post" action="/settings/save">
+            <div class="form-group">
+                <label>Bot Name</label>
+                <input type="text" name="bot_name" value="{{ config.bot.name }}">
+            </div>
+            <div class="form-group">
+                <label>Personality</label>
+                <select name="personality">
+                    <option value="friendly" {{ 'selected' if config.bot.personality == 'friendly' }}>Friendly and casual</option>
+                    <option value="professional" {{ 'selected' if config.bot.personality == 'professional' }}>Professional and formal</option>
+                    <option value="energetic" {{ 'selected' if config.bot.personality == 'energetic' }}>Fun and energetic</option>
+                    <option value="calm" {{ 'selected' if config.bot.personality == 'calm' }}>Calm and helpful</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>AI Model</label>
+                <input type="text" name="ai_model" value="{{ config.ai.model }}">
+            </div>
+            <div class="row">
+                <div class="form-group">
+                    <label>Temperature</label>
+                    <input type="number" name="temperature" value="{{ config.ai.temperature }}" step="0.1" min="0" max="2">
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group">
+                    <label>Daily Limit (USD)</label>
+                    <input type="number" name="daily_limit" value="{{ config.ai.daily_spend_limit }}" step="0.5" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Monthly Limit (USD)</label>
+                    <input type="number" name="monthly_limit" value="{{ config.ai.monthly_spend_limit }}" step="1" min="0">
+                </div>
+            </div>
+            <button type="submit" class="btn">Save Settings</button>
+        </form>
+    </div>
+</body>
+</html>

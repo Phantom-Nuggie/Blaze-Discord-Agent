@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlazeAgent - {{ bot_name }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a1a; color: #e0e0e0; font-family: 'Space Grotesk', 'Segoe UI', sans-serif; }
+        .sidebar { position: fixed; left: 0; top: 0; width: 220px; height: 100vh; background: #111127; padding: 20px 0; border-right: 1px solid #1a1a3e; }
+        .sidebar h2 { color: #e94560; padding: 0 20px 20px; font-size: 18px; border-bottom: 1px solid #1a1a3e; }
+        .sidebar a { display: block; padding: 12px 20px; color: #aaa; text-decoration: none; font-size: 14px; transition: all 0.2s; }
+        .sidebar a:hover, .sidebar a.active { background: #1a1a3e; color: #e94560; }
+        .main { margin-left: 220px; padding: 30px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header h1 { color: #fff; font-size: 24px; }
+        .status-badge { background: #00c853; color: #000; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .card { background: #111127; border: 1px solid #1a1a3e; border-radius: 8px; padding: 20px; }
+        .card h3 { color: #e94560; font-size: 14px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .card .value { font-size: 28px; color: #fff; font-weight: bold; }
+        .card .sub { font-size: 12px; color: #666; margin-top: 5px; }
+        .nav-icon { margin-right: 8px; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>BlazeAgent</h2>
+        <a href="/" class="active"><span class="nav-icon">🏠</span>Dashboard</a>
+        <a href="/soul"><span class="nav-icon">📝</span>Soul Editor</a>
+        <a href="/memory"><span class="nav-icon">🧠</span>Memory</a>
+        <a href="/skills"><span class="nav-icon">🔧</span>Skills</a>
+        <a href="/files"><span class="nav-icon">📁</span>Files</a>
+        <a href="/settings"><span class="nav-icon">⚙️</span>Settings</a>
+    </div>
+    <div class="main">
+        <div class="header">
+            <h1>{{ bot_name }}</h1>
+            <span class="status-badge">ONLINE</span>
+        </div>
+        <div class="grid">
+            <div class="card">
+                <h3>AI Model</h3>
+                <div class="value" style="font-size:16px;">{{ ai_model }}</div>
+                <div class="sub">Provider: {{ ai_provider }}</div>
+            </div>
+            <div class="card">
+                <h3>Personality</h3>
+                <div class="value" style="font-size:18px;">{{ bot_name }}</div>
+                <div class="sub">Active on your server</div>
+            </div>
+            <div class="card">
+                <h3>Soul.md</h3>
+                <div class="value" style="font-size:18px;">{% if soul_content %}✅ Loaded{% else %}❌ Missing{% endif %}</div>
+                <div class="sub"><a href="/soul" style="color:#e94560;">Edit now →</a></div>
+            </div>
+            <div class="card">
+                <h3>Dashboard</h3>
+                <div class="value" style="font-size:18px;">localhost:{{ port }}</div>
+                <div class="sub">Only accessible from this machine</div>
+            </div>
+        </div>
+        <div class="card" style="margin-top: 20px;">
+            <h3>Quick Tips</h3>
+            <ul style="margin-top: 10px; padding-left: 20px; color: #aaa; line-height: 1.8;">
+                <li>Go to <strong>Soul Editor</strong> and add your products/services to the FAQ</li>
+                <li>Customers can just talk to the bot naturally -- no commands needed</li>
+                <li>Use <strong>/speak</strong> in Discord to test the bot</li>
+                <li>Check <strong>Memory</strong> to see what the bot has learned about customers</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

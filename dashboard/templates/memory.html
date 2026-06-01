@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BlazeAgent - Memory</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a1a; color: #e0e0e0; font-family: 'Space Grotesk', 'Segoe UI', sans-serif; }
+        .sidebar { position: fixed; left: 0; top: 0; width: 220px; height: 100vh; background: #111127; padding: 20px 0; border-right: 1px solid #1a1a3e; }
+        .sidebar h2 { color: #e94560; padding: 0 20px 20px; font-size: 18px; border-bottom: 1px solid #1a1a3e; }
+        .sidebar a { display: block; padding: 12px 20px; color: #aaa; text-decoration: none; font-size: 14px; }
+        .sidebar a:hover, .sidebar a.active { background: #1a1a3e; color: #e94560; }
+        .main { margin-left: 220px; padding: 30px; }
+        .header { margin-bottom: 20px; }
+        .header h1 { color: #fff; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px; color: #e94560; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid #1a1a3e; }
+        td { padding: 10px 12px; border-bottom: 1px solid #1a1a3e; font-size: 14px; }
+        tr:hover { background: #111127; }
+        .empty { color: #666; font-style: italic; padding: 40px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>BlazeAgent</h2>
+        <a href="/"><span class="nav-icon">🏠</span>Dashboard</a>
+        <a href="/soul"><span class="nav-icon">📝</span>Soul Editor</a>
+        <a href="/memory" class="active"><span class="nav-icon">🧠</span>Memory</a>
+        <a href="/skills"><span class="nav-icon">🔧</span>Skills</a>
+        <a href="/files"><span class="nav-icon">📁</span>Files</a>
+        <a href="/settings"><span class="nav-icon">⚙️</span>Settings</a>
+    </div>
+    <div class="main">
+        <div class="header">
+            <h1>🧠 Stored Memory</h1>
+            <p style="color:#666; margin-top:5px; font-size:13px;">Data the bot has learned about users from conversations.</p>
+        </div>
+        {% if memories %}
+        <table>
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>Key</th>
+                    <th>Value</th>
+                    <th>Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in memories %}
+                <tr>
+                    <td><code>{{ m.user_id }}</code></td>
+                    <td><strong>{{ m.key }}</strong></td>
+                    <td>{{ m.value }}</td>
+                    <td>{{ m.updated_at }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty">No memory stored yet. The bot will learn about users as they chat.</div>
+        {% endif %}
+    </div>
+</body>
+</html>

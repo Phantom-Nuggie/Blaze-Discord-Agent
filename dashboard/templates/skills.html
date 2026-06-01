@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BlazeAgent - Skills</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0a1a; color: #e0e0e0; font-family: 'Space Grotesk', 'Segoe UI', sans-serif; }
+        .sidebar { position: fixed; left: 0; top: 0; width: 220px; height: 100vh; background: #111127; padding: 20px 0; border-right: 1px solid #1a1a3e; }
+        .sidebar h2 { color: #e94560; padding: 0 20px 20px; font-size: 18px; border-bottom: 1px solid #1a1a3e; }
+        .sidebar a { display: block; padding: 12px 20px; color: #aaa; text-decoration: none; font-size: 14px; }
+        .sidebar a:hover, .sidebar a.active { background: #1a1a3e; color: #e94560; }
+        .main { margin-left: 220px; padding: 30px; }
+        .header { margin-bottom: 20px; }
+        .header h1 { color: #fff; }
+        .skill-item { background: #111127; border: 1px solid #1a1a3e; border-radius: 8px; padding: 16px 20px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .skill-name { font-weight: bold; text-transform: capitalize; }
+        .skill-desc { color: #666; font-size: 12px; margin-top: 2px; }
+        .toggle-btn { padding: 6px 16px; border-radius: 4px; border: none; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .toggle-on { background: #00c853; color: #000; }
+        .toggle-off { background: #333; color: #888; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>BlazeAgent</h2>
+        <a href="/"><span class="nav-icon">🏠</span>Dashboard</a>
+        <a href="/soul"><span class="nav-icon">📝</span>Soul Editor</a>
+        <a href="/memory"><span class="nav-icon">🧠</span>Memory</a>
+        <a href="/skills" class="active"><span class="nav-icon">🔧</span>Skills</a>
+        <a href="/files"><span class="nav-icon">📁</span>Files</a>
+        <a href="/settings"><span class="nav-icon">⚙️</span>Settings</a>
+    </div>
+    <div class="main">
+        <div class="header">
+            <h1>🔧 Skills Configuration</h1>
+            <p style="color:#666; margin-top:5px; font-size:13px;">Enable or disable bot capabilities. Changes apply immediately.</p>
+        </div>
+        {% for name, enabled in skills.items() %}
+        <div class="skill-item">
+            <div>
+                <div class="skill-name">{{ name.replace('_', ' ') }}</div>
+                <div class="skill-desc">
+                    {% if name == 'faq' %}Answer questions from Soul.md knowledge base{% endif %}
+                    {% if name == 'order_taking' %}Guide customers through placing orders{% endif %}
+                    {% if name == 'booking' %}Handle appointment scheduling{% endif %}
+                    {% if name == 'lead_capture' %}Collect customer contact info{% endif %}
+                    {% if name == 'file_creation' %}Generate PDFs, docs, and spreadsheets{% endif %}
+                    {% if name == 'complaint_handler' %}Detect and handle customer complaints{% endif %}
+                    {% if name == 'language_detection' %}Auto-detect and respond in user's language{% endif %}
+                </div>
+            </div>
+            <form method="post" action="/skills/toggle" style="display:inline;">
+                <input type="hidden" name="skill_name" value="{{ name }}">
+                <input type="hidden" name="enabled" value="{{ 'false' if enabled else 'true' }}">
+                <button type="submit" class="toggle-btn {{ 'toggle-on' if enabled else 'toggle-off' }}">
+                    {{ 'ON' if enabled else 'OFF' }}
+                </button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
