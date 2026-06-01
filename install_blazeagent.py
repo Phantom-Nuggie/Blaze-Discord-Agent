@@ -443,6 +443,199 @@ def make_launchers(project_dir, python_path):
 
     ok("Launcher scripts created (start.sh / start.bat)")
 
+    # Install the blzed system command
+    _install_blazed(project_dir, python_path)
+
+    # Write VERSION file for update tracking
+    _write_version(project_dir, RELEASE_TAG.lstrip("v"))
+
+
+def _install_blazed(project_dir, python_path):
+    """Install the blzed terminal command in ~/.local/bin."""
+    bin_dir = os.path.join(os.path.expanduser("~"), ".local", "bin")
+    os.makedirs(bin_dir, exist_ok=True)
+
+    is_win = platform.system() == "Windows"
+
+    if is_win:
+        cmd_path = os.path.join(bin_dir, "blzed.cmd")
+        lines = [
+            "@echo off",
+            "REM Blaze-Agent CLI",
+            f'set PROJECT_DIR={project_dir}',
+            f'set PYTHON_PATH={python_path}',
+            'cd /d "%PROJECT_DIR%"',
+            'if "%1"=="start" goto run',
+            'if "%1"=="status" goto status',
+            'if "%1"=="update" goto update',
+            'if "%1"=="setup" goto setup',
+            'if "%1"=="version" goto version',
+            'if "%1"=="" goto run',
+            'echo Unknown: %1',
+            'goto :eof',
+            ':run',
+            'call .venv\\Scripts\\activate.bat 2>nul',
+            'python run.py',
+            'goto :eof',
+            ':status',
+            'if exist config\\config.yaml (echo Config: OK) else (echo Config: missing)',
+            'goto :eof',
+            ':update',
+            'echo Run: python install_blazeagent.py --yes',
+            'goto :eof',
+            ':setup',
+            'call .venv\\Scripts\\activate.bat 2>nul',
+            'python setup.py',
+            'goto :eof',
+            ':version',
+            'type VERSION',
+        ]
+        with open(cmd_path, "w") as f:
+            f.write("\r\n".join(lines) + "\r\n")
+    else:
+        cmd_path = os.path.join(bin_dir, "blzed")
+        script = _blazed_script(project_dir, python_path)
+        with open(cmd_path, "w") as f:
+            f.write(script)
+        os.chmod(cmd_path, 0o755)
+
+    # Ensure ~/.local/bin in PATH
+    _ensure_path(bin_dir)
+
+    ok(f"Terminal command installed: blzed")
+
+
+def _ensure_path(bin_dir):
+    """Add bin_dir to PATH in shell rc if missing."""
+    if os.name == "nt":
+        return
+    home = os.path.expanduser("~")
+    shell = os.environ.get("SHELL", "")
+    if "zsh" in shell:
+        rc = os.path.join(home, ".zshrc")
+    else:
+        rc = os.path.join(home, ".bashrc")
+    if not os.path.exists(rc):
+        return
+    marker = "# Blaze-Agent blzed CLI"
+    export_line = f'export PATH="{bin_dir}:$PATH"'
+    with open(rc, "r") as f:
+        content = f.read()
+    if ".local/bin" not in content:
+        with open(rc, "a") as f:
+            f.write(f"\n{marker}\n{export_line}\n")
+        ok(f"Added {bin_dir} to PATH ({os.path.basename(rc)})")
+
+
+def _blazed_script(project_dir, python_path):
+    """Generate the blzed bash script content."""
+    # Use a simple template with ^PLACEHOLDER^ substitution
+    # to avoid f-string / bash quoting nightmares
+    tpl = []
+    tpl.append("#!/usr/bin/env bash")
+    tpl.append("# Blaze-Agent CLI — blzed")
+    tpl.append("PROJECT_DIR=\"^PD^\"")
+    tpl.append("PYTHON=\"^PP^\"")
+    tpl.append("VERSION_FILE=\"$PROJECT_DIR/VERSION\"")
+    tpl.append("REPO_API=\"https://api.github.com/repos/Phantom-Nuggie/Blaze-Discord-Agent/releases/latest\"")
+    tpl.append("REPO_RAW=\"https://raw.githubusercontent.com/Phantom-Nuggie/Blaze-Discord-Agent/main\"")
+    tpl.append("")
+    tpl.append("cd \"$PROJECT_DIR\" 2>/dev/null || {")
+    tpl.append("  echo \"\"; echo \"  Error: Project dir not found: $PROJECT_DIR\"")
+    tpl.append("  echo \"  Fix: reinstall with python3 install_blazeagent.py\"; echo \"\"; exit 1")
+    tpl.append("}")
+    tpl.append("")
+    tpl.append("_gver() { [ -f \"$VERSION_FILE\" ] && cat \"$VERSION_FILE\" || echo \"unknown\"; }")
+    tpl.append("")
+    tpl.append("_glatest() {")
+    tpl.append("  local v=\"\"")
+    tpl.append("  v=$(curl -fsSL --max-time 5 \"$REPO_API\" 2>/dev/null | python3 -c \"")
+    tpl.append("import sys,json")
+    tpl.append("try:")
+    tpl.append("  d=json.load(sys.stdin)")
+    tpl.append("  print(d.get(\\'tag_name\\',\\'\\').lstrip(\\'v\\'))")
+    tpl.append("except:")
+    tpl.append("  print(\\'\\')")
+    tpl.append("\" 2>/dev/null)")
+    tpl.append("  [ -z \"$v\" ] && v=$(curl -fsSL --max-time 5 \"$REPO_RAW/VERSION\" 2>/dev/null | tr -d '[:space:]')")
+    tpl.append("  echo \"$v\"")
+    tpl.append("}")
+    tpl.append("")
+    tpl.append("case \"${1:-start}\" in")
+    tpl.append("  start)")
+    tpl.append("    echo \"\"; echo \"  Starting Blaze-Agent...\"; echo \"\"")
+    tpl.append("    source \"$PROJECT_DIR/.venv/bin/activate\" 2>/dev/null")
+    tpl.append("    exec python run.py")
+    tpl.append("    ;;")
+    tpl.append("  stop)")
+    tpl.append("    echo \"  Stop the bot with Ctrl+C.\"")
+    tpl.append("    ;;")
+    tpl.append("  status)")
+    tpl.append("    v=$(_gver); l=$(_glatest)")
+    tpl.append("    echo \"\"; printf \"  %-12sBlaze-Agent v%s\\n\" \"\" \"$v\"")
+    tpl.append("    echo \"  ───────────────────────────\"")
+    tpl.append("    printf \"  %-12s%s\\n\" \"Dir:\" \"$PROJECT_DIR\"")
+    tpl.append("    [ -f \"$PROJECT_DIR/config/config.yaml\" ] && printf \"  %-12s%s\\n\" \"Config:\" \"OK\" || printf \"  %-12s%s\\n\" \"Config:\" \"--missing--\"")
+    tpl.append("    [ -d \"$PROJECT_DIR/.venv\" ] && printf \"  %-12s%s\\n\" \"Venv:\" \"OK\" || printf \"  %-12s%s\\n\" \"Venv:\" \"--missing--\"")
+    tpl.append("    [ -n \"$l\" ] && [ \"$l\" != \"404\" ] && [ \"$v\" != \"$l\" ] && printf \"  %-12s%s\\n\" \"Update:\" \"v$l available\"")
+    tpl.append("    echo \"\"")
+    tpl.append("    ;;")
+    tpl.append("  update)")
+    tpl.append("    cur=$(_gver); lat=$(_glatest)")
+    tpl.append("    [ -z \"$lat\" ] || [ \"$lat\" = \"404\" ] && { echo \"  Error: Cannot reach update server.\"; exit 1; }")
+    tpl.append("    echo \"\"; echo \"  Current: v$cur\"; echo \"  Latest:  v$lat\"")
+    tpl.append("    [ \"$cur\" = \"$lat\" ] && { echo \"  Already up to date.\"; echo \"\"; exit 0; }")
+    tpl.append("    echo \"\"; echo \"  Updating...\"")
+    tpl.append("    tmp=$(mktemp -d)")
+    tpl.append("    curl -fsSL -o \"$tmp/blaze-agent.zip\" \\")
+    tpl.append("      \"https://github.com/Phantom-Nuggie/Blaze-Discord-Agent/releases/latest/download/Blaze-Agent.zip\" || {")
+    tpl.append("      echo \"  Download failed.\"; rm -rf \"$tmp\"; exit 1; }")
+    tpl.append("    cp -r \"$PROJECT_DIR/config\" \"$tmp/bak_cfg\" 2>/dev/null")
+    tpl.append("    cp -r \"$PROJECT_DIR/storage\" \"$tmp/bak_sto\" 2>/dev/null")
+    tpl.append("    unzip -qo \"$tmp/blaze-agent.zip\" -d \"$tmp/ext\"")
+    tpl.append("    ext=$(find \"$tmp/ext\" -maxdepth 1 -mindepth 1 -type d | head -1)")
+    tpl.append("    cp -r \"$ext/.\" \"$PROJECT_DIR/\"")
+    tpl.append("    cp -r \"$tmp/bak_cfg/.\" \"$PROJECT_DIR/config/\" 2>/dev/null")
+    tpl.append("    cp -r \"$tmp/bak_sto/.\" \"$PROJECT_DIR/storage/\" 2>/dev/null")
+    tpl.append("    echo \"  Installing dependencies...\"")
+    tpl.append("    \"$PROJECT_DIR/.venv/bin/pip\" install -q -r \"$PROJECT_DIR/requirements.txt\" 2>/dev/null")
+    tpl.append("    echo \"$lat\" > \"$VERSION_FILE\"")
+    tpl.append("    rm -rf \"$tmp\"")
+    tpl.append("    echo \"\"; echo \"  Updated: v$cur → v$lat\"")
+    tpl.append("    echo \"  Run '\\''blzed start'\\'' to restart.\"; echo \"\"")
+    tpl.append("    ;;")
+    tpl.append("  setup)")
+    tpl.append("    source \"$PROJECT_DIR/.venv/bin/activate\" 2>/dev/null")
+    tpl.append("    exec python setup.py")
+    tpl.append("    ;;")
+    tpl.append("  version|--version|-v)")
+    tpl.append("    echo \"  Blaze-Agent v$(_gver)\"")
+    tpl.append("    ;;")
+    tpl.append("  help|--help|-h)")
+    tpl.append("    echo \"\"; echo \"  blzed — Blaze-Agent CLI\"; echo \"\"")
+    tpl.append("    echo \"  start     Start bot (default)\"")
+    tpl.append("    echo \"    status    Show status\"")
+    tpl.append("    echo \"    update    Update to latest\"")
+    tpl.append("    echo \"    setup     Config wizard\"")
+    tpl.append("    echo \"    version   Show version\"")
+    tpl.append("    echo \"    help      This help\"; echo \"\"")
+    tpl.append("    ;;")
+    tpl.append("  *) echo \"  Unknown: $1. Run '\\''blzed help'\\''\"; exit 1 ;;")
+    tpl.append("esac")
+    tpl.append("")
+
+    result = "\n".join(tpl)
+    result = result.replace("^PD^", project_dir)
+    result = result.replace("^PP^", python_path)
+    return result
+
+
+def _write_version(project_dir, version):
+    """Write VERSION file for update tracking."""
+    with open(os.path.join(project_dir, "VERSION"), "w") as f:
+        f.write(version.strip() + "\n")
+
+
 # ═══════════════════════════════════════════════════
 #  STATUS / UNINSTALL
 # ═══════════════════════════════════════════════════
@@ -495,9 +688,9 @@ def summary(project_dir, python_path):
     print(f"  {r}{b}║{rst}  {b}Next steps:{' ' * (bw-13)}{r}{b}║{rst}")
 
     cmds = [
-        (f"cd {project_dir}", ""),
-        (f"{python_path} setup.py", ""),
-        (f"{python_path} run.py", ""),
+        ("blzed setup", "Configure your bot"),
+        ("blzed start", "Start the bot"),
+        ("blzed status", "Check status"),
     ]
     for cmd, _ in cmds:
         trunc = cmd[:bw-9]
