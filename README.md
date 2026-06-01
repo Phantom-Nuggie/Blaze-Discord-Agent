@@ -17,12 +17,13 @@ Blaze-Discord-Agent gives you an AI-powered Discord bot for your business. The b
 ### Option 1: One-line install (Linux/Mac)
 
 ```bash
-curl -fsSL https://blze.ai/install.py | python3
+curl -fsSL https://github.com/Phantom-Nuggie/Blaze-Discord-Agent/releases/latest/download/install_blazeagent.py | python3
 ```
 
-Or download and run the installer manually:
+Or download and run manually:
 
 ```bash
+curl -fsSL -o install_blazeagent.py https://github.com/Phantom-Nuggie/Blaze-Discord-Agent/releases/latest/download/install_blazeagent.py
 python3 install_blazeagent.py
 ```
 
