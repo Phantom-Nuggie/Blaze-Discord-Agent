@@ -504,7 +504,7 @@ def summary(project_dir, python_path):
         pad = bw - 9 - len(trunc)
         print(f"  {r}{b}║{rst}    {g}→{rst} {trunc}{' '*pad}{r}{b}║{rst}")
 
-    docs = "Docs: github.com/Phantom-Nuggie/Blaze-Discord-Agent"
+    docs = "Docs: github.com/Blaze-Discord-Agent"
     if len(docs) > bw - 4:
         docs = docs[:bw-7] + "..."
     print(f"  {r}{b}║{rst}  {d}{docs}{rst}{' '*max(0,bw-4-len(docs))}{r}{b}║{rst}")
