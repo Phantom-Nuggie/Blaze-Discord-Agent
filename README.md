@@ -54,7 +54,7 @@ Blaze-Agent installs a system-wide `blzed` command. Here's everything it does:
 |---------|-------------|
 | `blzed` or `blzed start` | Start the bot and web dashboard |
 | `blzed status` | Show version, config status, and whether an update is available |
-| `blzed update` | Download the latest version, preserve your config, reinstall deps |
+| `blzed update` | Downloads the latest version, preserves your config, reinstall deps |
 | `blzed setup` | Run the configuration wizard |
 | `blzed version` | Show installed version |
 | `blzed uninstall` | Remove Blaze-Agent completely |
