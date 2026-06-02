@@ -144,7 +144,7 @@ def extract_client_id(token: str) -> str:
         pass
     return ""
 
-def build_invite_url(client_id: str, permissions: int = 8) -> str:
+def build_invite_url(client_id: str, permissions: int = 1126400) -> str:
     return f"https://discord.com/oauth2/authorize?client_id={client_id}&permissions={permissions}&scope=bot%20applications.commands"
 
 def ensure_dirs():
