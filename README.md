@@ -1,165 +1,204 @@
-# Blaze-Discord-Agent
+# Blaze-Discord-Agent 🔥
 
-Self-service AI Discord agent. Your bot, your server, your API keys.
+### Your Business Deserves an AI Employee That Never Sleeps
 
-## What It Is
+Stop losing customers to slow responses. Stop answering the same questions 50 times a day. **Blaze-Discord-Agent** puts a smart, tireless AI assistant right inside your Discord server — and it runs on YOUR machine, with YOUR API keys, under YOUR control.
 
-Blaze-Discord-Agent gives you an AI-powered Discord bot for your business. The bot answers FAQs, takes orders, books appointments, remembers customer preferences, generates files, and more.
+> **You bring:** A Discord bot token + an AI API key
+> **We provide:** Everything else. The bot, the brain, the dashboard, the magic.
+> **Zero ongoing costs.** We host nothing. We see nothing. We take nothing.
 
-**You bring:** A Discord bot token + an AI API key (OpenRouter, OpenAI, Anthropic, Google, or Ollama for local)
+---
 
-**We provide:** The entire bot software, a setup wizard, and a web dashboard
+## ⚡ Install in 30 Seconds
 
-**Everything runs on YOUR machine.** We host nothing, see nothing, pay for nothing.
-
-## Quick Install
-
-### Option 1: One-line install (Linux/Mac)
+### One-liner (Linux/Mac)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Phantom-Nuggie/Blaze-Discord-Agent/main/install_blazeagent.py | python3
 ```
 
-Or download and run manually:
+That's it. Seriously. The installer handles everything — download, setup, dependencies, the works. Go grab a coffee. ☕
+
+### Windows / Manual
 
 ```bash
+# Download the installer
 curl -fsSL -o install_blazeagent.py https://raw.githubusercontent.com/Phantom-Nuggie/Blaze-Discord-Agent/main/install_blazeagent.py
-python3 install_blazeagent.py
+
+# Run it
+python install_blazeagent.py
 ```
 
-### Option 2: Manual install
+---
+
+## 🚀 Get Running
+
+After install, you get a brand new terminal command: **`blzed`**
 
 ```bash
-git clone https://github.com/Phantom-Nuggie/Blaze-Discord-Agent.git
-cd Blaze-Discord-Agent
-python3 -m venv .venv
-source .venv/bin/activate   # Linux/Mac
-# OR: .venv\Scripts\activate   # Windows
-pip install -r requirements.txt
+blzed setup      # Configure your bot (Discord token, AI key, personality)
+blzed start      # Fire it up 🔥
+blzed status     # Check everything's healthy
 ```
 
-## First Run
+**Three commands. Your bot is live.** 🎉
 
-### Step 1: Run the setup wizard
+---
+
+## 🛠️ The blzed CLI — Your New Best Friend
+
+Blaze-Agent installs a system-wide `blzed` command. Here's everything it does:
+
+| Command | What it does |
+|---------|-------------|
+| `blzed` or `blzed start` | Start the bot and web dashboard |
+| `blzed status` | Show version, config status, and whether an update is available |
+| `blzed update` | Download the latest version, preserve your config, reinstall deps |
+| `blzed setup` | Run the configuration wizard |
+| `blzed version` | Show installed version |
+| `blzed uninstall` | Remove Blaze-Agent completely |
+| `blzed help` | Show all commands |
+
+### Updating is painless ✨
 
 ```bash
-python setup.py
+blzed update
 ```
 
-The wizard will guide you through:
-- Creating a Discord bot
-- Entering your AI API key
-- Choosing your business type
-- Configuring personality and settings
+Downloads the latest release, merges the new code, **keeps your config and data safe**, reinstalls dependencies. Done. No reconfiguration needed.
 
-### Step 2: Start the bot
+---
 
-```bash
-python run.py
+## 🎯 What Can It Do?
+
+- 💬 **AI Chat** — Natural conversation powered by YOUR chosen AI model
+- 🧠 **Soul.md** — Give your bot a personality, business info, and knowledge (edit from the dashboard)
+- 💾 **Memory** — Remembers each customer's name, preferences, and history
+- 📋 **FAQ** — Answers questions from your knowledge base instantly (no AI cost for known answers)
+- 🛒 **Order Taking** — Guides customers through placing orders step by step
+- 📅 **Booking** — Handles appointment scheduling
+- 📧 **Lead Capture** — Collects customer contact info automatically
+- 📄 **File Creation** — Generates invoices, receipts, menus as PDFs
+- 😤 **Complaint Handler** — Detects upset customers and escalates appropriately
+- 💰 **Spend Limits** — Daily and monthly AI budget caps so you never get surprised
+- 🔀 **Multi-Provider** — Works with OpenRouter, OpenAI, Anthropic, Google, or Ollama (local, free)
+- 🌐 **Web Dashboard** — Manage everything from `http://localhost:8080`
+
+---
+
+## 🤖 Discord Commands
+
+| Command | Access | Description |
+|---------|--------|-------------|
+| `/help` | Everyone | Show available commands |
+| `/status` | Everyone | Bot status and stats |
+| `/memory` | Everyone | View what the bot knows about you |
+| `/forget` | Everyone | Delete your stored data |
+| `/contact` | Everyone | Escalate to a human |
+| `/pause` | Admin | Stop bot from responding |
+| `/resume` | Admin | Resume bot |
+| `/stats` | Admin | View detailed statistics |
+| `/soul` | Admin | Open Soul.md editor |
+| `/skills` | Admin | View/enable/disable skills |
+| `/cost` | Admin | View AI spend |
+| `/restart` | Admin | Restart the bot |
+
+---
+
+## 🌐 Dashboard
+
+Runs at `http://localhost:8080` by default.
+
+- **Home** — Bot status, today's stats, quick links
+- **Soul Editor** — Edit personality and knowledge (changes apply instantly)
+- **Memory** — See what the bot has learned about each customer
+- **Skills** — Enable/disable bot capabilities
+- **Files** — Manage generated documents
+- **Settings** — Change AI model, spend limits, bot name, personality
+
+---
+
+## 📦 What's Inside
+
+```
+Blaze-Agent/
+├── .venv/                  # Python virtual environment
+├── bot/
+│   ├── main.py             # Bot entry point
+│   ├── cogs/               # Discord command modules
+│   └── utils/              # AI, memory, skills, Soul.md engine
+├── config/
+│   ├── config.yaml         # Your configuration (preserved on update)
+│   ├── soul.md             # Bot personality (preserved on update)
+│   └── skills.yaml         # Skills config (preserved on update)
+├── dashboard/
+│   ├── server.py           # Web dashboard (FastAPI)
+│   └── templates/          # Dashboard HTML pages
+├── storage/
+│   ├── database.sqlite     # Conversations, memory, usage stats
+│   └── files/              # Generated PDFs, docs, etc.
+├── templates/              # Bot response templates
+├── template_skins/         # UI skin templates
+├── install_blazeagent.py   # The installer
+├── setup.py                # Configuration wizard
+├── run.py                  # Start bot + dashboard
+├── requirements.txt        # Python dependencies
+├── VERSION                 # Current version tracker
+├── start.sh                # Quick launcher (Linux/Mac)
+└── start.bat               # Quick launcher (Windows)
 ```
 
-That is it. Your bot is online.
+---
 
-### Step 3: Customize
+## ✅ Requirements
 
-Open the dashboard at `http://localhost:8080` to edit your bot's Soul.md -- its personality, business info, knowledge base, and behavior rules.
-
-## Requirements
-
-- Python 3.10+
-- A Discord account (to create a bot)
-- An AI API key:
+- **Python 3.10+**
+- **A Discord account** (to create a bot — free)
+- **An AI API key** (pick one):
   - **OpenRouter** (recommended): https://openrouter.ai/keys
   - OpenAI: https://platform.openai.com/api-keys
   - Anthropic: https://console.anthropic.com/settings/keys
   - Google Gemini: https://aistudio.google.com/app/apikey
   - Ollama (local, no key needed): https://ollama.com
 
-##Creating a Discord Bot
+---
+
+## 🔧 Creating a Discord Bot
 
 1. Go to https://discord.com/developers/applications
-2. Click "New Application" -- give it a name
-3. Click "Bot" in the left sidebar
-4. Click "Add Bot"
-5. Under "Privileged Gateway Intents", turn ON:
+2. Click **"New Application"** — give it a name
+3. Click **"Bot"** in the left sidebar
+4. Click **"Add Bot"**
+5. Under **"Privileged Gateway Intents"**, turn ON:
    - MESSAGE CONTENT INTENT
    - SERVER MEMBERS INTENT
    - PRESENCE INTENT
-6. Click "Reset Token" and copy it
-7. The setup wizard will build an invite link for you
+6. Click **"Reset Token"** and copy it
+7. Run `blzed setup` — it builds the invite link for you
 
-## Features
+---
 
-- **AI Chat** -- Natural conversation powered by your chosen AI model
-- **Soul.md** -- Edit your bot's personality, business info, and knowledge from the dashboard
-- **Memory** -- The bot remembers each customer's name, preferences, and history
-- **FAQ** -- Answers questions from your knowledge base (no AI cost for known questions)
-- **Order Taking** -- Guides customers through placing orders
-- **Booking** -- Handles appointment scheduling
-- **Lead Capture** -- Collects customer contact info
-- **File Creation** -- Generates invoices, receipts, menus, and more as PDFs
-- **Complaint Handler** -- Detects upset customers and escalates appropriately
-- **Spend Limits** -- Daily and monthly AI budget caps to prevent overages
-- **Multi-Provider** -- Works with OpenRouter, OpenAI, Anthropic, Google, or Ollama
-- **Dashboard** -- Web-based management at localhost:8080
+## 🔄 Updating
 
-## Commands
-
-| Command | Access | Description |
-|---------|--------|-------------|
-| /help | Everyone | Show available commands |
-| /status | Everyone | Bot status and stats |
-| /memory | Everyone | View what the bot knows about you |
-| /forget | Everyone | Delete your stored data |
-| /contact | Everyone | Escalate to a human |
-| /pause | Admin | Stop bot from responding |
-| /resume | Admin | Resume bot |
-| /stats | Admin | View detailed statistics |
-| /soul | Admin | Open Soul.md editor |
-| /skills | Admin | View/enable/disable skills |
-| /cost | Admin | View AI spend |
-| /restart | Admin | Restart the bot |
-
-## Dashboard
-
-The dashboard runs on localhost:8080 by default.
-
-- **Home** -- Bot status, today's stats, quick links
-- **Soul Editor** -- Edit your bot's personality and knowledge (changes apply immediately)
-- **Memory** -- View what the bot has learned about each customer
-- **Skills** -- Enable/disable bot capabilities
-- **Files** -- Manage generated documents
-- **Settings** -- Change AI model, spend limits, bot name, personality
-
-## Spending Limits
-
-Set daily and monthly AI spend limits in the setup wizard. The bot will pause AI responses when limits are hit. Configurable per server from the dashboard.
-
-## Folder Structure
-
-```
-Blaze-Agent/
-├── install_blazeagent.py   # Installer script
-├── setup.py                # Setup wizard
-├── run.py                  # Start the bot + dashboard
-├── requirements.txt        # Python dependencies
-├── config/
-│   ├── config.yaml         # Main configuration
-│   ├── soul.md             # Bot personality and knowledge
-│   └── skills.yaml         # Skills configuration
-├── bot/
-│   ├── main.py             # Bot entry point
-│   ├── cogs/               # Discord command modules
-│   └── utils/              # AI, memory, skills, Soul.md
-├── dashboard/
-│   ├── server.py           # Web dashboard server
-│   └── templates/          # Dashboard HTML pages
-└── storage/
-    ├── database.sqlite     # Conversations, memory, usage stats
-    ├── files/              # Generated files (PDFs, docs, etc.)
-    └── logs/               # Log files
+```bash
+blzed update
 ```
 
-## License
+That's it. Your config, data, and customizations are preserved. Always.
+
+---
+
+## 🗑️ Uninstalling
+
+```bash
+blzed uninstall
+```
+
+Removes everything — the project, the `blzed` command, the PATH entry. Clean.
+
+---
+
+## 📜 License
 
 MIT
