@@ -302,6 +302,8 @@ def download_source(target_dir):
         info("Removing old files...")
         shutil.rmtree(target_dir)
 
+    os.makedirs(target_dir, exist_ok=True)
+
     info(f"Source: github.com/{REPO_OWNER}/{REPO_NAME}/releases")
 
     tmp_zip = os.path.join("/tmp", "blaze_download.zip")
@@ -332,15 +334,40 @@ def download_source(target_dir):
     info("Extracting...")
     try:
         with zipfile.ZipFile(tmp_zip, "r") as zf:
-            # GitHub wraps in a top-level dir; extract to parent
+            # GitHub release zips may or may not wrap files in a top-level
+            # folder.  Detect and handle both cases.
             names = zf.namelist()
-            top = names[0].split("/")[0] if names else ""
-            zf.extractall(os.path.dirname(target_dir))
-            extracted = os.path.join(os.path.dirname(target_dir), top)
-            if os.path.exists(extracted) and extracted != target_dir:
-                if os.path.exists(target_dir):
-                    shutil.rmtree(target_dir)
-                shutil.move(extracted, target_dir)
+            top_items = set(n.split("/")[0] for n in names if n.strip())
+
+            tmp_extract = tmp_zip + "_extract"
+            os.makedirs(tmp_extract, exist_ok=True)
+            zf.extractall(tmp_extract)
+
+            if len(top_items) == 1:
+                # Single wrapper folder: move its contents
+                wrapper = os.path.join(tmp_extract, top_items.pop())
+                for item in os.listdir(wrapper):
+                    src = os.path.join(wrapper, item)
+                    dst = os.path.join(target_dir, item)
+                    if os.path.exists(dst):
+                        if os.path.isdir(dst):
+                            shutil.rmtree(dst)
+                        else:
+                            os.unlink(dst)
+                    shutil.move(src, dst)
+            else:
+                # Multiple root items: move everything
+                for item in os.listdir(tmp_extract):
+                    src = os.path.join(tmp_extract, item)
+                    dst = os.path.join(target_dir, item)
+                    if os.path.exists(dst):
+                        if os.path.isdir(dst):
+                            shutil.rmtree(dst)
+                        else:
+                            os.unlink(dst)
+                    shutil.move(src, dst)
+
+            shutil.rmtree(tmp_extract, ignore_errors=True)
         ok(f"Extracted to: {target_dir}")
     except Exception as e:
         fail(f"Extraction failed: {e}")
